@@ -1,7 +1,16 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
+#designed to operate on docx files only, for now
 
 import sys
+import re
+from docx import Document
 
+#globals
+doc = Document(sys.argv[1])
+foundSomething = False
+
+#utility functions
 def answerYes():
 	ans = raw_input()
 	if ans == 'y' or ans == 'Y' or ans == 'yes':
@@ -31,23 +40,42 @@ def menu(msg, *args):
 	if isInt(choice):
 		choice = int(choice)
 		if choice > 0 and choice <= len(args) / 2:
-			args[int(choice) * 2 - 1](sys.argv[1])
+			args[choice * 2 - 1]()
 			return
 
 	print "invalid answer..."
 	menu(msg, *args)
 
+#rule tests
+def paragraphLengthCheck():
+	for ind, par in enumerate(doc.paragraphs):
+		if len(par.text) > 500:
+			print "Paragraph " + str(ind) + " (\"" + par.text[:20] + "...\") is " \
+			+ str(len(par.text)) + " characters."
+			foundSomething = True
 
-def fullVerbatim(infile=''):
-	print "full Verbatim called with " + infile
+def boldTimeStampsCheck():
+	timeStampPattern = re.compile(r"[0-9][0-9]\:[0-9][0-9]\:[0-9][0-9]")
+	timestamps = []
+	for par in doc.paragraphs:
+		timestamps += map(lambda x: x.group(), \
+		re.finditer(timeStampPattern, par.text))
+
+	print timestamps
 
 
-def cleanVerbatim(infile=''):
-	print "clean verbatim called with " + infile
+def fullVerbatim():
+	print "full Verbatim called"
+	#paragraphLengthCheck()
+	boldTimeStampsCheck()
 
 
+def cleanVerbatim():
+	print "clean verbatim called"
+	paragraphLengthCheck()
+	boldTimeStampsCheck()
 
 
-menu("Select a transcription type", "Full Verbatim", fullVerbatim, "Clean Verbatim", cleanVerbatim)
-
-#menuResponse = raw_input("Select transcript type:\n 	1) Full Verbatim\n 		2) Clean Verbatim")
+#main
+menu("Select a transcription type", "Full Verbatim", fullVerbatim, \
+	"Clean Verbatim", cleanVerbatim)
